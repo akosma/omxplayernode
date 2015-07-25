@@ -1,0 +1,25 @@
+{
+  "name": "omxplayernode",
+  "version": "1.0.0",
+  "description": "Simple Node + Express + Socket.io app to drive omxplayer on a Raspberry Pi through a REST interface",
+  "main": "server.js",
+  "dependencies": {
+    "exec-sync": "^0.1.6",
+    "express": "^4.13.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akosma/omxplayernode"
+  },
+  "author": "Adrian Kosmaczewski",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/akosma/omxplayernode/issues"
+  },
+  "homepage": "https://github.com/akosma/omxplayernode"
+}
