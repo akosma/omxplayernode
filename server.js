@@ -269,67 +269,89 @@ var MoviePlayer = function () {
 } ();
 
 /**
- * Definition of the API endpoints.
+ * Returning a web interface for the application.
  */
 app.get('/', function (req, res) {
-  var response = {
-    method: 'version',
-    response: MoviePlayer.version()
-  };
-  res.send(response);
+  res.sendFile(__dirname + '/chat.html');
 });
-
-app.get('/disk', function (req, res) {
-  var response = {
-    method: 'disk',
-    response: getDiskSpace(),
-    unit: 'GB'
-  };
-  res.send(response);
-});
-
-app.get('/movies', function (req, res) {
-  var response = {
-    method: 'movies',
-    response: MoviePlayer.movieList()
-  };
-  res.send(response);
-});
-
-app.get('/current_movie', function (req, res) {
-  var response = MoviePlayer.currentMovie();
-  res.send(response);
-});
-
-app.post('/play/:movie', function (req, res) {
-  var movie = req.params.movie;
-  var response = MoviePlayer.play(movie);
-  res.send(response);
-});
-
-app.post('/stop', function (req, res) {
-  var response  = MoviePlayer.stop();
-  res.send(response);
-});
-
-app.post('/command/:action', function (req, res) {
-  var action = req.params.action;
-  var response = MoviePlayer.sendCommand(action);
-  res.send(response);
-});
-
-// Uncomment for testing the correct setup of socket.io
-//app.get('/test', function(req, res){
-  //res.sendFile(__dirname + '/chat.html');
-//});
 
 /**
  * Definition of the Socket.io endpoints.
  */
 io.on('connection', function(socket) {
-  console.log('user connected');
-  socket.on('chat message', function(msg){
-    console.log('message: ' + msg);
+  var emitMovies = function () {
+    console.log('emitting "movies"');
+    var response = {
+      method: 'movies',
+      response: MoviePlayer.movieList()
+    };
+    socket.emit('movies', response);
+  };
+
+  var emitDiskSpace = function () {
+    console.log('emitting "disk"');
+    var response = {
+      method: 'disk',
+      response: getDiskSpace(),
+      unit: 'GB'
+    };
+    socket.emit('disk', response);
+  };
+
+  var emitCurrentMovie = function () {
+    console.log('emitting "current movie"');
+    var response = MoviePlayer.currentMovie();
+    socket.emit('current_movie', response);
+  };
+
+  var broadcastCurrentMovie = function () {
+    console.log('broadcasting "current movie"');
+    var response = MoviePlayer.currentMovie();
+    socket.broadcast.emit('current_movie', response);
+  };
+
+  var broadcastStop = function () {
+    socket.broadcast.emit('stop');
+  };
+
+  // Upon a new connection, proactively emit the list
+  // of movies, the disk space and the current movie playing.
+  socket.emit('welcome');
+  console.log('client connected');
+  emitMovies();
+  emitDiskSpace();
+  emitCurrentMovie();
+
+  socket.on('movies', function() {
+    console.log('received "movies"');
+    emitMovies();
+  });
+
+  socket.on('disk', function() {
+    console.log('received "disk"');
+    emitDiskSpace();
+  });
+
+  socket.on('current_movie', function () {
+    console.log('received "current_movie"');
+    emitCurrentMovie();
+  });
+
+  socket.on('play', function (movie) {
+    console.log('received "play ' + movie + '"');
+    MoviePlayer.play(movie);
+    broadcastCurrentMovie();
+  });
+
+  socket.on('stop', function (movie) {
+    console.log('received "stop"');
+    MoviePlayer.stop();
+    broadcastStop();
+  });
+
+  socket.on('command', function (action) {
+    console.log('received "command ' + action + '"');
+    MoviePlayer.sendCommand(action);
   });
 });
 
