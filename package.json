@@ -1,11 +1,12 @@
 {
   "name": "omxplayernode",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Simple Node + Express + Socket.io app to drive omxplayer on a Raspberry Pi through a REST interface",
   "main": "server.js",
   "dependencies": {
     "exec-sync": "^0.1.6",
-    "express": "^4.13.1"
+    "express": "^4.13.1",
+    "socket.io": "^1.3.6"
   },
   "devDependencies": {},
   "scripts": {

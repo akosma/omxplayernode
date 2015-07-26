@@ -4,25 +4,55 @@ var spawn = require('child_process').spawn;
 var execSync = require("exec-sync");
 var fs = require('fs');
 
-var app = express();
-
+/**
+ * Returns a boolean stating whether the current string
+ * has the specified suffix.
+ * Courtesy of
+ * http://stackoverflow.com/a/2548133/133764
+ */
 String.prototype.endsWith = function(suffix) {
-    // http://stackoverflow.com/a/2548133/133764
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
 
+/**
+ * Returns the currently available disk space in this
+ * Raspberry Pi unit.
+ * Unfortunately we cannot use child_process.execSync
+ * as it is only available on Node 0.12 onwards,
+ * and we're using 0.10 here.
+ */
 var getDiskSpace = function () {
-    // Unfortunately we cannot use child_process.execSync 
-    // as it is only available on Node 0.12 onwards, and
-    // we're using 0.10 here.
     return execSync("df -h | grep /dev/root | awk '{print $4}'");
 };
 
+/**
+ * Singleton object wrapping the complete interaction with the 
+ * child process playing the movie.
+ */
 var MoviePlayer = function () {
+    /**
+     * When a movie is playing, this variable
+     * holds the filename of the movie.
+     */
     var currentFileName = null;
+
+    /**
+     * Variable holding the spawned omxplayer process.
+     */
     var childProcess = null;
+
+    /**
+     * Location of the movies
+     */
     var baseDir = '/home/pi/movies';
 
+    /**
+     * Dictionary holding the valid commands that can be
+     * passed through the "send command" API endpoint.
+     * The keys are the values that should be sent from 
+     * the clients, while the values are the actual commands
+     * that omxplayer expects.
+     */
     var commands = {
         "pause":      " ",
         "forward":    "$'\e'[C",
@@ -37,6 +67,11 @@ var MoviePlayer = function () {
         "subtitles":  "s"
     };
 
+    /**
+     * Returns a string with the list of all the 
+     * commands accespted by this object through the
+     * "send command API endpoint, for convenience.
+     */
     var validCommands = function () {
         var output = [];
         for (var key in commands) {
@@ -47,6 +82,10 @@ var MoviePlayer = function () {
         return result;
     };
 
+    /**
+     * Returns the complete list of files, without
+     * the *.srt files in the specified folder.
+     */
     var movieList = function (path) {
         var movies = [];
         var d = fs.readdirSync(path);
@@ -60,6 +99,15 @@ var MoviePlayer = function () {
         return movies;
     };
 
+    /**
+     * Plays the movie passed as parameter.
+     * If a movie is already playing, the client receives a special
+     * error message telling him so.
+     * If the movie passed as parameter is not a valid filename,
+     * the client receives an error message.
+     * If the filename is valid, and no other movie was playing, then
+     * a child omxplayer process launches and is kept for interaction.
+     */
     var play = function (movie) {
         var response = null;
 
@@ -101,6 +149,13 @@ var MoviePlayer = function () {
         return response;
     };
 
+    /**
+     * Stops the current movie and kills the omxplayer process.
+     * It resets the status of this MoviePlayer object to a
+     * default state.
+     * If no child process is available, the standard "no
+     * movie" response is sent.
+     */
     var stop = function () {
         if (childProcess == null) {
             return noMovieResponse();
@@ -118,6 +173,11 @@ var MoviePlayer = function () {
         return response;
     };
 
+    /**
+     * Standard response sent by many functions
+     * in this object whenever a method is called and
+     * no movie is playing.
+     */
     var noMovieResponse = function () {
         response = {
             method: "error",
@@ -126,12 +186,23 @@ var MoviePlayer = function () {
         return response;
     };
 
+    /**
+     * Pipes a command into the stdin interface of the
+     * current omxplayer child process.
+     * If no child process is available, this function
+     * returns the standard "no movie" response.
+     * If the command passed as parameter is not one
+     * of the valid commands, an explanatory text is sent
+     * to the client with the list of proper commands.
+     */
     var sendCommand = function (action) {
         if (childProcess == null) {
             return noMovieResponse();
         }
         var response = null;
         var c = commands[action];
+
+        // Check if command is valid
         if (c == null) {
             var v = validCommands();
             response = {
@@ -150,6 +221,11 @@ var MoviePlayer = function () {
         return response;
     };
 
+    /**
+     * Returns the filename of the movie currently playing.
+     * If no movie is playing, then the standard
+     * "no movie" response is sent.
+     */
     var currentMovie = function () {
         if (childProcess == null) {
             return noMovieResponse();
@@ -161,6 +237,9 @@ var MoviePlayer = function () {
         return response;
     };
 
+    /**
+     * Public interface of this object.
+     */
     return {
         play: function (movie) {
             return play(movie);
@@ -187,6 +266,11 @@ var MoviePlayer = function () {
         }
     };
 } ();
+
+/**
+ * Definition of the API endpoints.
+ */
+var app = express();
 
 app.get('/', function (req, res) {
     var response = {
