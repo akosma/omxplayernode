@@ -26,12 +26,6 @@ To install this code in your Raspberry Pi:
 To be able to interact with the server, consider installing
 [omxplayerios][omxplayerios] on your iOS devices.
 
-## Future enhancements
-
-For future versions, the following features will be considered:
-
-- Web interface at the root path.
-
 ## License
 
 Check the LICENSE file for details.
