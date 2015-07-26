@@ -1,4 +1,6 @@
 var express = require('express');
+var app = require('express')();
+var http = require('http');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var execSync = require("exec-sync");
@@ -319,10 +321,11 @@ app.post('/command/:action', function (req, res) {
     res.send(response);
 });
 
-var server = app.listen(3000, function () {
+var server = http.Server(app)
+
+server.listen(3000, function(){
     var host = server.address().address;
     var port = server.address().port;
 
     console.log('Raspberry Pi Movie Player app listening at http://%s:%s', host, port);
 });
-
