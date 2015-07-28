@@ -22,9 +22,31 @@ To install this code in your Raspberry Pi:
 3. Copy your movie files (including subtitle files) in the `/home/pi/movies`
    folder.
 4. Run the command `supervisor server.js` on the command line.
+5. Browse to `http://[YOUR_RASPI_IP_HERE]:3000` to use the application.
 
 To be able to interact with the server, consider installing
 [omxplayerios][omxplayerios] on your iOS devices.
+
+## Protocol
+
+The application has a very simple protocol:
+
+- Whenever a new client connects, it gets the list of movies, the available
+  disk space and the name of the current movie automatically. The respective
+  messages are `movies`, `disk` and `current_movie.`
+- All messages have the same format: `{ method: 'method_name', response:
+  [array]|string }`
+- Response messages include the name of the api method in the `method` field.
+- The `movies` message returns a list of filenames.
+- The `disk` message returns a string with the number and unit, like "14G"
+  meaning 14 gigabytes.
+- The `current_movie` message returns a string with the filename of the movie
+  currently playing.
+- The `play` message triggers a broadcast to all connected clients of the
+  `current_movie` message.
+- The `stop` message triggers a broadcast to all connected clients of the
+  `stop` message.
+- The `command` message does not trigger a broadcast nor returns anything.
 
 ## License
 
