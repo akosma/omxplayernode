@@ -32,3 +32,5 @@ node_modules
 # Vim swap files
 *.swp
 
+# Stuff from Apple
+.AppleDouble

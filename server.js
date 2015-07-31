@@ -94,7 +94,7 @@ var MoviePlayer = function () {
     var d = fs.readdirSync(path);
     for (var i = 0, len = d.length; i < len; ++i) {
       var f = d[i];
-      if (f !== ".DS_Store" && !f.endsWith(".srt")) {
+      if (f !== ".DS_Store" && f !== ".AppleDouble" && !f.endsWith(".srt")) {
         movies.push(f);
       }
     }
