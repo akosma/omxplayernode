@@ -330,6 +330,8 @@ io.on('connection', function(socket) {
   Downloader.setDownloadEndedCallback(function (url, code) {
       console.log('download of ' + url + ' ended with code ' + code);
       emitMovies();
+      emitDiskSpace();
+      emitCurrentMovie();
   });
   
   var emitMovies = function () {
