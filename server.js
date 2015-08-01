@@ -54,7 +54,7 @@ var Downloader = function () {
     dl.on('close', function (code) {
       console.log('download exited with code ' + code);
       if (downloadEndedCallback !== null) {
-          downloadEndedCallback(url, code);
+        downloadEndedCallback(url, code);
       }
     });
   }
@@ -136,10 +136,10 @@ var MoviePlayer = function () {
     var d = fs.readdirSync(path);
     for (var i = 0, len = d.length; i < len; ++i) {
       var f = d[i];
-      if (f !== ".DS_Store"
-          && f !== ".AppleDouble"
-          && !f.endsWith(".srt")
-          && !f.endsWith(".part")) {
+      if (f !== ".DS_Store" &&
+          f !== ".AppleDouble" &&
+            !f.endsWith(".srt") &&
+              !f.endsWith(".part")) {
         movies.push(f);
       }
     }
@@ -328,10 +328,10 @@ app.use(express.static(__dirname + '/app'));
  */
 io.on('connection', function(socket) {
   Downloader.setDownloadEndedCallback(function (url, code) {
-      console.log('download of ' + url + ' ended with code ' + code);
-      emitMovies();
-      emitDiskSpace();
-      emitCurrentMovie();
+    console.log('download of ' + url + ' ended with code ' + code);
+    emitMovies();
+    emitDiskSpace();
+    emitCurrentMovie();
   });
 
   var emitMovies = function () {
