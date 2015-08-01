@@ -54,7 +54,7 @@ var Downloader = function () {
     dl.on('close', function (code) {
       console.log('download exited with code ' + code);
       if (downloadEndedCallback !== null) {
-          downloadEndedCallback(url);
+          downloadEndedCallback(url, code);
       }
     });
   }
@@ -327,8 +327,8 @@ app.use(express.static(__dirname + '/app'));
  * Definition of the Socket.io endpoints.
  */
 io.on('connection', function(socket) {
-  Downloader.setDownloadEndedCallback(function (url) {
-      console.log('download of ' + url + ' ended');
+  Downloader.setDownloadEndedCallback(function (url, code) {
+      console.log('download of ' + url + ' ended with code ' + code);
       emitMovies();
   });
   
