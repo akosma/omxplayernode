@@ -329,6 +329,7 @@ app.use(express.static(__dirname + '/app'));
 io.on('connection', function(socket) {
   Downloader.setDownloadEndedCallback(function (url, code) {
     console.log('download of ' + url + ' ended with code ' + code);
+    emitDownloadFinished(url, code);
     emitMovies();
     emitDiskSpace();
     emitCurrentMovie();
@@ -349,7 +350,19 @@ io.on('connection', function(socket) {
       method: 'download',
       response: url
     };
-    socket.emit('download', url);
+    socket.emit('download', response);
+  };
+
+  var emitDownloadFinished = function (url, code) {
+    console.log('emitting "download finished"');
+    var response = {
+      method: 'download finished',
+      response: {
+        url: url,
+        code: code
+      }
+    };
+    socket.emit('download finished', response);
   };
 
   var emitDiskSpace = function () {
