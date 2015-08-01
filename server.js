@@ -29,10 +29,44 @@ var getDiskSpace = function () {
 };
 
 var Downloader = function () {
-  var currentDownloads = [];
+  var baseDir = '/home/pi/movies';
+  var downloadEndedCallback = null;
+
+  function download(url) {
+    var command = 'youtube-dl';
+    var args = [ '--title', '--continue', url ];
+
+    var options = {
+      'cwd': baseDir
+    };
+
+    // Store the child process for future use
+    var dl = spawn(command, args, options);
+    
+    dl.stdout.on('data', function (data) {
+      console.log('downloading: ' + data);
+    });
+    
+    dl.stderr.on('data', function (data) {
+      console.log('download error: ' + data);
+    });
+    
+    dl.on('close', function (code) {
+      console.log('download exited with code ' + code);
+      if (downloadEndedCallback !== null) {
+          downloadEndedCallback(url);
+      }
+    });
+  }
 
   return {
-    download: function (url) {}
+    download: function (url) {
+      download(url);
+    },
+    
+    setDownloadEndedCallback: function (func) {  
+      downloadEndedCallback = func;
+    }
   };
 } ();
 
@@ -102,7 +136,10 @@ var MoviePlayer = function () {
     var d = fs.readdirSync(path);
     for (var i = 0, len = d.length; i < len; ++i) {
       var f = d[i];
-      if (f !== ".DS_Store" && f !== ".AppleDouble" && !f.endsWith(".srt")) {
+      if (f !== ".DS_Store"
+          && f !== ".AppleDouble"
+          && !f.endsWith(".srt")
+          && !f.endsWith(".part")) {
         movies.push(f);
       }
     }
@@ -290,6 +327,11 @@ app.use(express.static(__dirname + '/app'));
  * Definition of the Socket.io endpoints.
  */
 io.on('connection', function(socket) {
+  Downloader.setDownloadEndedCallback(function (url) {
+      console.log('download of ' + url + ' ended');
+      emitMovies();
+  });
+  
   var emitMovies = function () {
     console.log('emitting "movies"');
     var response = {
@@ -297,6 +339,15 @@ io.on('connection', function(socket) {
       response: MoviePlayer.movieList()
     };
     socket.emit('movies', response);
+  };
+
+  var emitDownload = function (url) {
+    console.log('emitting "download"');
+    var response = {
+      method: 'download',
+      response: url
+    };
+    socket.emit('download', url);
   };
 
   var emitDiskSpace = function () {
@@ -351,6 +402,7 @@ io.on('connection', function(socket) {
   socket.on('download', function (url) {
     console.log('received "download ' + url + '"');
     Downloader.download(url);
+    emitDownload(url);
   });
 
   socket.on('play', function (movie) {
