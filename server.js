@@ -42,15 +42,15 @@ var Downloader = function () {
 
     // Store the child process for future use
     var dl = spawn(command, args, options);
-    
+
     dl.stdout.on('data', function (data) {
       console.log('downloading: ' + data);
     });
-    
+
     dl.stderr.on('data', function (data) {
       console.log('download error: ' + data);
     });
-    
+
     dl.on('close', function (code) {
       console.log('download exited with code ' + code);
       if (downloadEndedCallback !== null) {
@@ -63,8 +63,8 @@ var Downloader = function () {
     download: function (url) {
       download(url);
     },
-    
-    setDownloadEndedCallback: function (func) {  
+
+    setDownloadEndedCallback: function (func) {
       downloadEndedCallback = func;
     }
   };
@@ -333,7 +333,7 @@ io.on('connection', function(socket) {
       emitDiskSpace();
       emitCurrentMovie();
   });
-  
+
   var emitMovies = function () {
     console.log('emitting "movies"');
     var response = {
@@ -400,7 +400,7 @@ io.on('connection', function(socket) {
     console.log('received "current_movie"');
     emitCurrentMovie();
   });
-  
+
   socket.on('download', function (url) {
     console.log('received "download ' + url + '"');
     Downloader.download(url);
