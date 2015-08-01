@@ -329,7 +329,7 @@ app.use(express.static(__dirname + '/app'));
 io.on('connection', function(socket) {
   Downloader.setDownloadEndedCallback(function (url, code) {
     console.log('download of ' + url + ' ended with code ' + code);
-    emitDownloadFinished(url, code);
+    broadcastDownloadFinished(url, code);
     emitMovies();
     emitDiskSpace();
     emitCurrentMovie();
@@ -353,16 +353,16 @@ io.on('connection', function(socket) {
     socket.emit('download', response);
   };
 
-  var emitDownloadFinished = function (url, code) {
-    console.log('emitting "download finished"');
+  var broadcastDownloadFinished = function (url, code) {
+    console.log('broadcasting "download_finished"');
     var response = {
-      method: 'download finished',
+      method: 'download_finished',
       response: {
         url: url,
         code: code
       }
     };
-    socket.emit('download finished', response);
+    socket.broadcast.emit('download_finished', response);
   };
 
   var emitDiskSpace = function () {
@@ -382,7 +382,7 @@ io.on('connection', function(socket) {
   };
 
   var broadcastCurrentMovie = function () {
-    console.log('broadcasting "current movie"');
+    console.log('broadcasting "current_movie"');
     var response = MoviePlayer.currentMovie();
     socket.broadcast.emit('current_movie', response);
   };
