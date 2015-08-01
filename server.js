@@ -28,6 +28,14 @@ var getDiskSpace = function () {
   return execSync("df -h | grep /dev/root | awk '{print $4}'");
 };
 
+var Downloader = function () {
+  var currentDownloads = [];
+
+  return {
+    download: function (url) {}
+  };
+} ();
+
 /**
  * Singleton object wrapping the complete interaction with the
  * child process playing the movie.
@@ -338,6 +346,11 @@ io.on('connection', function(socket) {
   socket.on('current_movie', function () {
     console.log('received "current_movie"');
     emitCurrentMovie();
+  });
+  
+  socket.on('download', function (url) {
+    console.log('received "download ' + url + '"');
+    Downloader.download(url);
   });
 
   socket.on('play', function (movie) {
