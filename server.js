@@ -18,6 +18,25 @@ String.prototype.endsWith = function(suffix) {
 };
 
 /**
+ * Logs information on the console.
+ * Courtesy of
+ * http://stackoverflow.com/a/18410523
+ */
+var DEBUG = (function () {
+  var timestamp = function () {};
+  timestamp.toString = function () {
+    return "[DEBUG " + (new Date).toLocaleTimeString() + "]";    
+  };
+
+  return {
+    log: console.log.bind(console, '%s', timestamp),
+    error: console.error.bind(console, '%s', timestamp),
+    info: console.info.bind(console, '%s', timestamp),
+    warn: console.warn.bind(console, '%s', timestamp)
+  }
+}) ();
+
+/**
  * Returns the currently available disk space in this
  * Raspberry Pi unit.
  * Unfortunately we cannot use child_process.execSync
@@ -28,7 +47,7 @@ var getDiskSpace = function () {
   return execSync("df -h | grep /dev/root | awk '{print $4}'");
 };
 
-var Downloader = function () {
+var Downloader = (function () {
   var baseDir = '/home/pi/movies';
   var downloadEndedCallback = null;
 
@@ -44,15 +63,15 @@ var Downloader = function () {
     var dl = spawn(command, args, options);
 
     dl.stdout.on('data', function (data) {
-      console.log('downloading: ' + data);
+      DEBUG.log('downloading: ' + data);
     });
 
     dl.stderr.on('data', function (data) {
-      console.log('download error: ' + data);
+      DEBUG.log('download error: ' + data);
     });
 
     dl.on('close', function (code) {
-      console.log('download exited with code ' + code);
+      DEBUG.log('download exited with code ' + code);
       if (downloadEndedCallback !== null) {
         downloadEndedCallback(url, code);
       }
@@ -68,13 +87,13 @@ var Downloader = function () {
       downloadEndedCallback = func;
     }
   };
-} ();
+}) ();
 
 /**
  * Singleton object wrapping the complete interaction with the
  * child process playing the movie.
  */
-var MoviePlayer = function () {
+var MoviePlayer = (function () {
   /**
    * When a movie is playing, this variable
    * holds the filename of the movie.
@@ -312,7 +331,7 @@ var MoviePlayer = function () {
       return sendCommand(action);
     }
   };
-} ();
+}) ();
 
 /**
  * Returning a web interface for the application.
@@ -328,7 +347,7 @@ app.use(express.static(__dirname + '/app'));
  */
 io.on('connection', function(socket) {
   Downloader.setDownloadEndedCallback(function (url, code) {
-    console.log('download of ' + url + ' ended with code ' + code);
+    DEBUG.log('download of ' + url + ' ended with code ' + code);
     broadcastDownloadFinished(url, code);
     emitMovies();
     emitDiskSpace();
@@ -336,7 +355,7 @@ io.on('connection', function(socket) {
   });
 
   var emitMovies = function () {
-    console.log('emitting "movies"');
+    DEBUG.log('emitting "movies"');
     var response = {
       method: 'movies',
       response: MoviePlayer.movieList()
@@ -345,7 +364,7 @@ io.on('connection', function(socket) {
   };
 
   var emitDownload = function (url) {
-    console.log('emitting "download"');
+    DEBUG.log('emitting "download"');
     var response = {
       method: 'download',
       response: url
@@ -354,7 +373,7 @@ io.on('connection', function(socket) {
   };
 
   var broadcastDownloadFinished = function (url, code) {
-    console.log('broadcasting "download_finished"');
+    DEBUG.log('broadcasting "download_finished"');
     var response = {
       method: 'download_finished',
       response: {
@@ -366,7 +385,7 @@ io.on('connection', function(socket) {
   };
 
   var emitDiskSpace = function () {
-    console.log('emitting "disk"');
+    DEBUG.log('emitting "disk"');
     var response = {
       method: 'disk',
       response: getDiskSpace(),
@@ -376,64 +395,65 @@ io.on('connection', function(socket) {
   };
 
   var emitCurrentMovie = function () {
-    console.log('emitting "current movie"');
+    DEBUG.log('emitting "current_movie"');
     var response = MoviePlayer.currentMovie();
     socket.emit('current_movie', response);
   };
 
   var broadcastCurrentMovie = function () {
-    console.log('broadcasting "current_movie"');
+    DEBUG.log('broadcasting "current_movie"');
     var response = MoviePlayer.currentMovie();
     socket.broadcast.emit('current_movie', response);
   };
 
   var broadcastStop = function () {
+    DEBUG.log('broadcasting "stop"');
     socket.broadcast.emit('stop');
   };
 
   // Upon a new connection, proactively emit the list
   // of movies, the disk space and the current movie playing.
   socket.emit('welcome');
-  console.log('client connected');
+  DEBUG.log('client connected');
   emitMovies();
   emitDiskSpace();
   emitCurrentMovie();
 
   socket.on('movies', function() {
-    console.log('received "movies"');
+    DEBUG.log('received "movies"');
     emitMovies();
   });
 
   socket.on('disk', function() {
-    console.log('received "disk"');
+    DEBUG.log('received "disk"');
     emitDiskSpace();
   });
 
   socket.on('current_movie', function () {
-    console.log('received "current_movie"');
+    DEBUG.log('received "current_movie"');
     emitCurrentMovie();
   });
 
   socket.on('download', function (url) {
-    console.log('received "download ' + url + '"');
+    DEBUG.log('received "download ' + url + '"');
     Downloader.download(url);
     emitDownload(url);
   });
 
   socket.on('play', function (movie) {
-    console.log('received "play ' + movie + '"');
+    DEBUG.log('received "play ' + movie + '"');
     MoviePlayer.play(movie);
     broadcastCurrentMovie();
   });
 
   socket.on('stop', function (movie) {
-    console.log('received "stop"');
+    DEBUG.log('received "stop"');
     MoviePlayer.stop();
     broadcastStop();
   });
 
   socket.on('command', function (action) {
-    console.log('received "command ' + action + '"');
+    DEBUG.log('received "command ' + action + '"');
     MoviePlayer.sendCommand(action);
   });
 });
@@ -441,10 +461,10 @@ io.on('connection', function(socket) {
 /**
  * Server startup.
  */
-http.listen(3000, function(){
+http.listen(3000, function () {
   var host = http.address().address;
   var port = http.address().port;
 
-  console.log('Raspberry Pi Movie Player app listening at http://%s:%s', host, port);
+  DEBUG.log('Raspberry Pi Movie Player app listening at http://%s:%s', host, port);
 });
 
